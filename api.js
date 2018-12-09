@@ -20,6 +20,8 @@ get = uri => request(uri, fetch_config('GET')),
 
 post = (uri, json) => request(uri, fetch_config('POST', json)),
 
+del = uri => request(uri, fetch_config('DELETE')),
+
 pair_to_str = ([key, value]) => (key && value) ? `?${key}=${value}` : '',
 
 in_parallel = requests => Promise.all(requests),
@@ -43,6 +45,10 @@ register_user = user_json => post('/users', { user: user_json }),
 login_user = user_json => post('/users/login', { user: user_json }),
 
 create_article = article_json => post('/articles', { article: article_json }),
+
+favorite_article = slug => post(`/articles/${slug}/favorite`),
+
+unfavorite_article = slug => del(`/articles/${slug}/favorite`),
 
 get_home_page = filter_pair => merge_reponses([
   get_articles_list(filter_pair),

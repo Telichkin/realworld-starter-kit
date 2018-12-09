@@ -1,31 +1,13 @@
 const
 
-page_article = ({ article: { title, body, favoritesCount, updatedAt, author: { username, image } }, comments }) => `
+page_article = ({ article, comments }) => `
   <div class="article-page">
 
     <div class="banner">
       <div class="container">
 
-        <h1>${title}</h1>
-
-        <div class="article-meta">
-          <a href="/#/${username}"><img src="${image}" /></a>
-          <div class="info">
-            <a href="/#/${username}" class="author">${username}</a>
-            <span class="date">${date_to_str(updatedAt)}</span>
-          </div>
-          <button class="btn btn-sm btn-outline-secondary">
-            <i class="ion-plus-round"></i>
-            &nbsp;
-            Follow ${username}
-          </button>
-          &nbsp;&nbsp;
-          <button class="btn btn-sm btn-outline-primary">
-            <i class="ion-heart"></i>
-            &nbsp;
-            Favorite Post <span class="counter">(${favoritesCount})</span>
-          </button>
-        </div>
+        <h1>${article.title}</h1>
+        ${article_meta(article)}
       </div>
     </div>
 
@@ -33,31 +15,14 @@ page_article = ({ article: { title, body, favoritesCount, updatedAt, author: { u
 
       <div class="row article-content">
         <div class="col-md-12">
-          ${body}
+          ${article.body}
         </div>
       </div>
 
       <hr />
 
       <div class="article-actions">
-        <div class="article-meta">
-          <a href="/#/${username}"><img src="${image}" /></a>
-          <div class="info">
-            <a href="/#/${username}" class="author">${username}</a>
-            <span class="date">${date_to_str(updatedAt)}</span>
-          </div>
-          <button class="btn btn-sm btn-outline-secondary">
-            <i class="ion-plus-round"></i>
-            &nbsp;
-            Follow ${username}
-          </button>
-          &nbsp;&nbsp;
-          <button class="btn btn-sm btn-outline-primary">
-            <i class="ion-heart"></i>
-            &nbsp;
-            Favorite Post <span class="counter">(${favoritesCount})</span>
-          </button>
-        </div>
+        ${article_meta(article)}
       </div>
 
       <div class="row">
@@ -85,7 +50,7 @@ page_article = ({ article: { title, body, favoritesCount, updatedAt, author: { u
     </div>
 
   </div>
-`
+`,
 
 article_comment = ({ body, updatedAt, author: { username, image } }) => `
   <div class="card">
@@ -101,4 +66,37 @@ article_comment = ({ body, updatedAt, author: { username, image } }) => `
       <span class="date-posted">${date_to_str(updatedAt)}</span>
     </div>
   </div>
+`,
+
+article_meta = ({ slug, updatedAt, favorited, favoritesCount, author: { username, image } }) => `
+  <div class="article-meta">
+    <a href="/#/${username}"><img src="${image}" /></a>
+    <div class="info">
+      <a href="/#/${username}" class="author">${username}</a>
+      <span class="date">${date_to_str(updatedAt)}</span>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary">
+      <i class="ion-plus-round"></i>
+      &nbsp;
+      Follow ${username}
+    </button>
+    &nbsp;&nbsp;
+    ${favorited ? unfavorite_button({ slug, favoritesCount }) : favorite_button({ slug, favoritesCount })}
+  </div>
+`,
+
+favorite_button = ({ slug, favoritesCount }) => `
+  <button id="favorite-button" data-slug="${slug}" class="btn btn-sm btn-primary">
+    <i class="ion-heart"></i>
+    &nbsp;
+    Favorite Article <span class="counter">(${favoritesCount})</span>
+  </button>
+`,
+
+unfavorite_button = ({ slug, favoritesCount }) => `
+  <button id="unfavorite-button" data-slug="${slug}" class="btn btn-sm btn-outline-primary">
+    <i class="ion-heart"></i>
+    &nbsp;
+    Unfavorite Article<span class="counter">(${favoritesCount})</span>
+  </button>
 `

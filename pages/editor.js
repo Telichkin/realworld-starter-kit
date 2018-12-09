@@ -15,7 +15,7 @@ page_editor = ({ article: { title = '', description = '', body = '', tagList = [
                   <input name="description" value="${description}" type="text" class="form-control" placeholder="What's this article about?">
               </fieldset>
               <fieldset class="form-group">
-                  <textarea name="body" value="${body}" class="form-control" rows="8" placeholder="Write your article (in markdown)"></textarea>
+                  <textarea name="body" class="form-control" rows="8" placeholder="Write your article (in markdown)">${body}</textarea>
               </fieldset>
               <fieldset class="form-group">
                   <input name="tagList" value="${tag_list_to_str(tagList)}" type="text" class="form-control" placeholder="Enter tags"><div class="tag-list"></div>

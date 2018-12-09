@@ -43,7 +43,7 @@
 
     create_dispatch_hash = routes => () => use_route(first_route_matched_hash(routes)),
 
-    r = str => new RegExp(str),
+    r = str => new RegExp(`^${str}/?$`),
     
     after_fetch_do = (fetch_res, ...fns) => fetch_res.then(json => fns.forEach(fn => fn(json))),
   
@@ -51,25 +51,30 @@
     
     render_home = fetch_and_render(get_home_page, page_home),
 
-    go_to_hash = hash_str => window.location.hash = hash_str,
+    go_to_hash = hash_str => location.hash = hash_str,
 
     go_to_home = () => go_to_hash('/'),
 
     go_to_article = ({ article: { slug } }) => go_to_hash('/article/' + slug),
+
+    go_to_register = () => go_to_hash('/register'),
+    
+    refresh_page = () => dispatch_hash(hash()),
 
     authenticate_user = user => { save_user(user); go_to_home() },
 
     logout = () => { remove_user(); go_to_home() },
 
     dispatch_hash = create_dispatch_hash([
-      [r('^#/login/?'),             render_page(page_login)],
-      [r('^#/register/?'),          render_page(page_register)],
-      [r('^#/settings/?'),          fetch_and_render(get_user, page_settings)],
-      [r('^#/editor/?'),            render_page(page_editor)],
-      [r('^#/article/([^/]+)/?'),   fetch_and_render(get_article_page, page_article)],
-      [r('^#/([^/]+)/favorites/?'), fetch_and_render(get_profile_favorites, page_profile_favorites)],
-      [r('^#/([^/]+)/?'),           fetch_and_render(get_profile_page, page_profile)],
-      [r('^$|.+/?'),                render_home],
+      [r('#/login'),             render_page(page_login)],
+      [r('#/register'),          render_page(page_register)],
+      [r('#/settings'),          fetch_and_render(get_user, page_settings)],
+      [r('#/editor'),            render_page(page_editor)],
+      [r('#/editor/([^/]+)'),    fetch_and_render(get_article, page_editor)],
+      [r('#/article/([^/]+)'),   fetch_and_render(get_article_page, page_article)],
+      [r('#/([^/]+)/favorites'), fetch_and_render(get_profile_favorites, page_profile_favorites)],
+      [r('#/([^/]+)'),           fetch_and_render(get_profile_page, page_profile)],
+      [r('$|.+'),                render_home],
     ]),
 
     on_success = fn => json => !json.errors && fn(json),
@@ -99,6 +104,18 @@
     ))
     
     on('click', '#logout-button', logout)
+
+    on('click', '#favorite-button', ({ target }) => after_fetch_do(
+      favorite_article(target.dataset.slug),
+      on_success(refresh_page),
+      on_error(go_to_register)
+    ))
+
+    on('click', '#unfavorite-button', ({ target }) => after_fetch_do(
+      unfavorite_article(target.dataset.slug),
+      on_success(refresh_page),
+      on_error(go_to_register)
+    ))
 
     on_hash_changed(dispatch_hash)
 
