@@ -1,7 +1,7 @@
 const
 
 page_body = (user, rendered_page, page_name) => `
-  ${user ? auth_navigation(user, page_name): anon_navigation(page_name)}
+  ${user ? auth_navigation(user, page_name) : anon_navigation(page_name)}
 
   ${rendered_page}
 

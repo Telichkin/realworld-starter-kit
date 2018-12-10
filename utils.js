@@ -34,4 +34,6 @@ token = () => saved_user() ? saved_user().user.token : null,
 
 save_user = user => localStorage.setItem('user', JSON.stringify(user)),
 
-remove_user = () => localStorage.removeItem('user')
+remove_user = () => localStorage.removeItem('user'),
+
+case_of = (...pairs) => (...args) => { for (let [cond, fn] of pairs) { if (cond(...args)) return fn(...args) } }
