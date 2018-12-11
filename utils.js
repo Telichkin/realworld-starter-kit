@@ -6,7 +6,9 @@ date_to_str = date => new Date(date).toLocaleDateString('en-US', {
   weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
 }),
 
-empty_articles = () => '<div class="article-preview">No articles are here... yet.</div>',
+empty_articles = () => `
+  <div class="article-preview">No articles are here... yet.</div>
+`,
 
 merge = objects => Object.assign({}, ...objects),
 
@@ -20,7 +22,7 @@ map_keys_and_values = (object, fn) => Object.entries(object).map(([k, v]) => fn(
 
 concat_with_each = (prefix, postfixes_list) => postfixes_list.map(p => `${prefix} ${p}`),
 
-flat_arr = nested_arrays => nested_arrays.reduce((res, arr) => res.concat(arr), []),
+flat_arr = nested => nested.reduce((res, arr) => res.concat(arr), []),
 
 error_messages = errors => `
   <ul class="error-messages">
@@ -29,6 +31,8 @@ error_messages = errors => `
 `,
 
 saved_user = () => JSON.parse(localStorage.getItem('user')),
+
+saved_username = () => saved_user() ? saved_user().user.username : ''
 
 token = () => saved_user() ? saved_user().user.token : null,
 

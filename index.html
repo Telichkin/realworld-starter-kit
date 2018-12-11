@@ -16,120 +16,184 @@
   <script src="pages/register-login.js"></script>
   <script src="pages/settings.js"></script>
   <script src="pages/editor.js"></script>
+  <script src="pages/not-found.js"></script>
   <script>
-    const 
-    
-    $ = selector => document.querySelector(selector),
+  const
 
-    $all = selector => document.querySelectorAll(selector),
+  $ = selector => document.querySelector(selector),
 
-    $form_to_json = selector => Array.from($all(`${selector} [name]`)).reduce((json, i) => add(json, i.name, i.value), {}),
+  $all = selector => document.querySelectorAll(selector),
 
-    on_hash_changed = fn => window.addEventListener('hashchange', fn, false),
-    
-    on = (event, selector, fn) => document.addEventListener(event, e => e.target.matches(selector) && fn(e), true),
+  $form_to_json = selector => Array.from($all(`${selector} [name]`)).reduce((json, i) => add(json, i.name, i.value), {}),
 
-    prevent = fn => e => { e.preventDefault(); fn(e) },
-    
-    render_page = page => json => document.body.innerHTML = page_body(saved_user(), page(json), page.name),
+  on_hash_changed = fn => window.addEventListener('hashchange', fn, false),
 
-    render_page_with_context = (page, context) => json => render_page(page)(merge([json, context])),
-    
-    hash = () => window.location.hash,
+  pair = bool_fn => fn => ([bool_fn, fn]),
 
-    first_route_matched_hash = routes => routes.filter(([regex]) => regex.test(hash()))[0],
+  elem_is_match = selector => pair(e => e.target.matches(selector)),
 
-    use_route = ([regex, fn]) => fn(regex.exec(hash())[1]),
+  elem_is_include = selector => pair(e => e.target.matches(`${selector} *`)),
 
-    create_dispatch_hash = routes => () => use_route(first_route_matched_hash(routes)),
+  use_this_elem = fn => e => fn(e.target),
 
-    r = str => new RegExp(`^${str}/?$`),
-    
-    fetch_and_do = (fetch_res, fn) => fetch_res.then(fn),
-  
-    fetch_and_render = (fetch_fn, page_fn) => (...args) => fetch_and_do(fetch_fn(...args), render_page(page_fn)),
-    
-    render_home = fetch_and_render(get_home_page, page_home),
+  use_parent_elem = (selector, fn) => e => fn(e.target.closest(selector)),
 
-    redirect_to_hash = hash_str => location.hash = hash_str,
+  on = (event, selector, fn) => document.addEventListener(event,
+    case_of(
+      elem_is_match(selector)(use_this_elem(fn)),
+      elem_is_include(selector)(use_parent_elem(selector, fn))), true),
 
-    redirect_to_home = () => redirect_to_hash('/'),
+  on_click = (selector, fn) => on('click', selector, fn),
 
-    redirect_to_article = ({ article: { slug } }) => redirect_to_hash('/article/' + slug),
+  prevent = fn => e => { e.preventDefault(); fn(e) },
 
-    redirect_to_register = () => redirect_to_hash('/register'),
+  render_page = page => json => document.body.innerHTML = page_body(saved_user(), page(json), page.name),
 
-    redirect_to_user = () => redirect_to_hash('/' + saved_user().user.username),
-    
-    refresh_page = () => dispatch_hash(hash()),
+  render_page_with_context = (page, context) => json => render_page(page)(merge([json, context])),
 
-    authenticate_user = user => { save_user(user); redirect_to_home() },
+  hash = () => window.location.hash,
 
-    logout = () => { remove_user(); redirect_to_home() },
+  first_route_matched_hash = routes => routes.filter(([regex]) => regex.test(hash()))[0],
 
-    user_is_anon = fn => ([() => !saved_user(), fn]),
+  use_route = ([regex, fn]) => fn(regex.exec(hash())[1]),
 
-    user_is_auth = fn => ([() => saved_user(), fn]),
+  create_dispatch_hash = routes => () => use_route(first_route_matched_hash(routes)),
 
-    user_is_author = fn => ([username => saved_user() && saved_user().user.username, fn])
+  r = str => new RegExp(`^${str}/?$`),
 
-    dispatch_hash = create_dispatch_hash([
-      [r('#/login'),             case_of(
-                                  user_is_anon(render_page(page_login)), 
-                                  user_is_auth(redirect_to_user))],
+  fetch_and_do = (fetch_res, fn) => fetch_res.then(fn),
 
-      [r('#/register'),          render_page(page_register)],
-      [r('#/settings'),          fetch_and_render(get_user, page_settings)],
-      [r('#/editor'),            render_page(page_editor)],
-      [r('#/editor/([^/]+)'),    fetch_and_render(get_article, page_editor)],
-      [r('#/article/([^/]+)'),   fetch_and_render(get_article_page, page_article)],
-      [r('#/([^/]+)/favorites'), fetch_and_render(get_profile_favorites, page_profile_favorites)],
-      [r('#/([^/]+)'),           fetch_and_render(get_profile_page, page_profile)],
-      [r('$|.+'),                render_home],
-    ]),
+  fetch_and_render = (fetch_fn, page_fn) => (...args) => fetch_and_do(fetch_fn(...args), render_page(page_fn)),
 
-    resp_is_success = fn => ([json => !json.errors, fn]),
+  render_home = fetch_and_render(get_home_page, page_home),
 
-    resp_is_error = fn => ([json => !!json.errors, fn])
+  redirect_to_hash = hash_str => location.hash = hash_str,
 
-    on('click', '.tag-pill', prevent(({ target }) => render_home(['tag', target.innerText])))
-    
-    on('click', '.page-link', prevent(({ target }) => render_home(['offset', target.dataset.offset])))
+  redirect_to_home = () => redirect_to_hash('/'),
 
-    on('click', '#register-button', () => fetch_and_do(
-      register_user($form_to_json('form')),
+  redirect_to_article = ({ article: { slug } }) => redirect_to_hash('/article/' + slug),
+
+  redirect_to_login = () => redirect_to_hash('/login'),
+
+  redirect_to_user = () => redirect_to_hash('/' + saved_username()),
+
+  redirect_to_editor = slug => redirect_to_hash('/editor/' + slug),
+
+  refresh_page = () => dispatch_hash(hash()),
+
+  authenticate_user = user => { save_user(user); redirect_to_home() },
+
+  logout = () => { remove_user(); redirect_to_home() },
+
+  user_is_anon = pair(() => !saved_user()),
+
+  user_is_auth = pair(() => saved_user()),
+
+  user_is_author = pair(({ article: { author: { username } } = {} } = {}) =>
+    saved_username() === username),
+
+  resp_is_success = pair(json => !json.errors && !json.error),
+
+  resp_is_error = pair(json => !!json.errors || !!json.error),
+
+  and = (...pair_creators) =>
+    pair((...args) => pair_creators.every(c => c(...args)[0])),
+
+  dispatch_hash = create_dispatch_hash([
+    [
+      r('#/login'),
       case_of(
-        resp_is_success(authenticate_user),
-        resp_is_error(render_page_with_context(page_register, { user: $form_to_json('form') })))))
-
-    on('click', '#login-button', () => fetch_and_do(
-      login_user($form_to_json('form')), 
+        user_is_anon(render_page(page_login)),
+        user_is_auth(redirect_to_user))
+    ], [
+      r('#/register'),
       case_of(
-        resp_is_success(authenticate_user),
-        resp_is_error(render_page_with_context(page_login, { user: $form_to_json('form') })))))
-
-    on('click', '#publish-article', () => fetch_and_do(
-      create_article($form_to_json('form')),
+        user_is_anon(render_page(page_register)),
+        user_is_auth(redirect_to_user))
+    ], [
+      r('#/settings'),
       case_of(
-        resp_is_success(redirect_to_article),
-        resp_is_error(render_page_with_context(page_editor, { article: $form_to_json('form') })))))
-    
-    on('click', '#logout-button', logout)
-
-    on('click', '#favorite-button', ({ target }) => fetch_and_do(
-      favorite_article(target.dataset.slug),
+        user_is_anon(render_page(page_not_found)),
+        user_is_auth(fetch_and_render(get_user, page_settings)))
+    ], [
+      r('#/editor'),
       case_of(
-        resp_is_success(refresh_page),
-        resp_is_error(redirect_to_register))))
-
-    on('click', '#unfavorite-button', ({ target }) => fetch_and_do(
-      unfavorite_article(target.dataset.slug),
+        user_is_anon(render_page(page_not_found)),
+        user_is_auth(render_page(page_editor)))
+    ], [
+      r('#/editor/([^/]+)'),
       case_of(
-        resp_is_success(refresh_page),
-        resp_is_error(redirect_to_register))))
+        user_is_anon(render_page(page_not_found)),
+        user_is_auth(fetch_and_render(get_article, page_editor)))
+    ], [
+      r('#/article/([^/]+)'),
+      fetch_and_render(get_article_page, case_of(
+        and(resp_is_success, user_is_author)(page_article_author),
+        resp_is_success(page_article),
+        resp_is_error(page_not_found)))
+    ], [
+      r('#/([^/]+)/favorites'),
+      fetch_and_render(get_profile_favorites, case_of(
+        resp_is_success(page_profile_favorites),
+        resp_is_error(page_not_found)))
+    ], [
+      r('#/([^/]+)'),
+      fetch_and_render(get_profile_page, case_of(
+                                           resp_is_success(page_profile),
+                                           resp_is_error(page_not_found)))
+    ], [
+      r('$|^#'),
+      render_home
+    ], [
+      r('.+'),
+      render_page(page_not_found)
+    ],
+  ])
 
-    on_hash_changed(dispatch_hash)
+  on_click('.tag-pill', prevent(tag => render_home(['tag', tag.innerText])))
 
-    dispatch_hash()
+  on_click('.page-link', prevent(link => render_home(['offset', link.dataset.offset])))
+
+  on_click('#register-button', () => fetch_and_do(
+    register_user($form_to_json('form')),
+    case_of(
+      resp_is_success(authenticate_user),
+      resp_is_error(render_page_with_context(page_register, { user: $form_to_json('form') })))))
+
+  on_click('#login-button', () => fetch_and_do(
+    login_user($form_to_json('form')),
+    case_of(
+      resp_is_success(authenticate_user),
+      resp_is_error(render_page_with_context(page_login, { user: $form_to_json('form') })))))
+
+  on_click('#publish-article', () => fetch_and_do(
+    create_article($form_to_json('form')),
+    case_of(
+      resp_is_success(redirect_to_article),
+      resp_is_error(render_page_with_context(page_editor, { article: $form_to_json('form') })))))
+
+  on_click('#logout-button', logout)
+
+  on_click('.favorite-button', button => fetch_and_do(
+    favorite_article(button.dataset.slug),
+    case_of(
+      resp_is_success(refresh_page),
+      resp_is_error(redirect_to_login))))
+
+  on_click('.unfavorite-button', button => fetch_and_do(
+    unfavorite_article(button.dataset.slug),
+    case_of(
+      resp_is_success(refresh_page),
+      resp_is_error(redirect_to_login))))
+
+  on_click('#edit-button', button => redirect_to_editor(button.dataset.slug))
+
+  on_click('#delete-button', button => fetch_and_do(
+    delete_article(button.dataset.slug),
+    redirect_to_home))
+
+  on_hash_changed(dispatch_hash)
+
+  dispatch_hash()
   </script>
 </html>

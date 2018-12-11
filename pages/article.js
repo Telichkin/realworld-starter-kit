@@ -1,13 +1,13 @@
 const
 
-page_article = ({ article, comments }) => `
+page_article_template = is_author => ({ article, comments }) => `
   <div class="article-page">
 
     <div class="banner">
       <div class="container">
 
         <h1>${article.title}</h1>
-        ${article_meta(article)}
+        ${is_author ? article_meta_author(article) : article_meta(article)}
       </div>
     </div>
 
@@ -22,7 +22,7 @@ page_article = ({ article, comments }) => `
       <hr />
 
       <div class="article-actions">
-        ${article_meta(article)}
+        ${is_author ? article_meta_author(article) : article_meta(article)}
       </div>
 
       <div class="row">
@@ -85,18 +85,43 @@ article_meta = ({ slug, updatedAt, favorited, favoritesCount, author: { username
   </div>
 `,
 
+article_meta_author = ({ slug, updatedAt, favorited, favoritesCount, author: { username, image } }) => `
+  <div class="article-meta">
+    <a href="/#/${username}"><img src="${image}" /></a>
+    <div class="info">
+      <a href="/#/${username}" class="author">${username}</a>
+      <span class="date">${date_to_str(updatedAt)}</span>
+    </div>
+    <button id="edit-button" data-slug="${slug}" class="btn btn-sm btn-outline-secondary">
+      <i class="ion-edit"></i>
+      &nbsp;
+      Edit Article
+    </button>
+    <button id="delete-button" data-slug="${slug}" class="btn btn-sm btn-outline-danger">
+      <i class="ion-trash-a"></i>
+      &nbsp;
+      Delete Article
+    </button>
+    &nbsp;&nbsp;
+  </div>
+`,
+
 favorite_button = ({ slug, favoritesCount }) => `
-  <button id="favorite-button" data-slug="${slug}" class="btn btn-sm btn-primary">
+  <button data-slug="${slug}" class="favorite-button btn btn-sm btn-outline-primary">
     <i class="ion-heart"></i>
     &nbsp;
     Favorite Article <span class="counter">(${favoritesCount})</span>
   </button>
-`,
+  `,
 
 unfavorite_button = ({ slug, favoritesCount }) => `
-  <button id="unfavorite-button" data-slug="${slug}" class="btn btn-sm btn-outline-primary">
+<button data-slug="${slug}" class="unfavorite-button btn btn-sm btn-primary">
     <i class="ion-heart"></i>
     &nbsp;
     Unfavorite Article<span class="counter">(${favoritesCount})</span>
   </button>
-`
+`,
+
+page_article = page_article_template(false),
+
+page_article_author = page_article_template(true)

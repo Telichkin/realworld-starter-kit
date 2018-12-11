@@ -1,4 +1,4 @@
-const 
+const
 
 page_home = ({ articles, tags, articlesCount }) => `
   <div class="home-page">
@@ -50,7 +50,7 @@ page_home = ({ articles, tags, articlesCount }) => `
   </div>
   `,
 
-article_preview = ({ title, slug, description, favoritesCount, updatedAt, author: { image, username }}) => `
+article_preview = ({ title, slug, description, favoritesCount, favorited, updatedAt, author: { image, username }}) => `
   <div class="article-preview">
     <div class="article-meta">
       <a href="/#/${username}"><img src="${image}" /></a>
@@ -58,9 +58,9 @@ article_preview = ({ title, slug, description, favoritesCount, updatedAt, author
         <a href="/#/${username}" class="author">${username}</a>
         <span class="date">${date_to_str(updatedAt)}</span>
       </div>
-      <button class="btn btn-outline-primary btn-sm pull-xs-right">
-        <i class="ion-heart"></i> ${favoritesCount}
-      </button>
+      ${favorited
+          ? unfavorite_small_button({ slug, favoritesCount })
+          : favorite_small_button({ slug, favoritesCount })}
     </div>
     <a href="/#/article/${slug}" class="preview-link">
       <h1>${title}</h1>
@@ -84,4 +84,16 @@ render_many_times = (number, fn) => render_many(Array(number).fill(0).map((_, i)
 
 number_of_pages = total_articles_number => Math.ceil(total_articles_number / 20),
 
-page_offset = number => (number - 1) * 20
+page_offset = number => (number - 1) * 20,
+
+favorite_small_button = ({ slug, favoritesCount }) => `
+  <button data-slug="${slug}" class="btn btn-outline-primary btn-sm pull-xs-right favorite-button">
+    <i class="ion-heart"></i> ${favoritesCount}
+  </button>
+`,
+
+unfavorite_small_button = ({ slug, favoritesCount }) => `
+<button data-slug="${slug}" class="btn btn-primary btn-sm pull-xs-right unfavorite-button">
+    <i class="ion-heart"></i> ${favoritesCount}
+  </button>
+`

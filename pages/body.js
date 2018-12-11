@@ -45,10 +45,10 @@ auth_navigation = ({ user: { username = '' } }, page_name) => `
           <a class="nav-link ${active_on_page('home', page_name)}" href="/#/">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link ${active_on_page('editor', page_name)}" href="/#/editor"><i class="ion-compose"></i>New Post</a>
+          <a class="nav-link ${active_on_page('editor', page_name)}" href="/#/editor"><i class="ion-compose"></i>&nbsp;New Post</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link ${active_on_page('settings', page_name)}" href="/#/settings"><i class="ion-gear-a"></i>Settings</a>
+          <a class="nav-link ${active_on_page('settings', page_name)}" href="/#/settings"><i class="ion-gear-a"></i>&nbsp;Settings</a>
         </li>
         <li class="nav-item">
           <a class="nav-link ${active_on_page('profile', page_name)}" href="/#/${username}">${username}</a>

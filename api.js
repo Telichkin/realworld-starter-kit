@@ -12,8 +12,6 @@ fetch_config = (method, json) => merge([
   json ? { body: JSON.stringify(json) } : {},
 ]),
 
-fallback_on_exception = (fn, fallback_fn) => fn().catch(fallback_fn),
-
 resp_to_json = resp => resp.text().then(t => JSON.parse(t)).catch(t => ({ errors: { text: t } })),
 
 request = (uri, config) => fetch(BASE_URL + uri, config).then(resp_to_json, resp_to_json),
@@ -51,6 +49,8 @@ create_article = article_json => post('/articles', { article: article_json }),
 favorite_article = slug => post(`/articles/${slug}/favorite`),
 
 unfavorite_article = slug => del(`/articles/${slug}/favorite`),
+
+delete_article = slug => del(`/articles/${slug}`),
 
 get_home_page = filter_pair => merge_reponses([
   get_articles_list(filter_pair),
