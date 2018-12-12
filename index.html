@@ -97,7 +97,7 @@
   resp_is_error = pair(json => !!json.errors || !!json.error),
 
   and = (...pair_creators) =>
-    pair((...args) => pair_creators.every(c => c(...args)[0])),
+    pair((...args) => pair_creators.every(c => c()[0](...args))),
 
   dispatch_hash = create_dispatch_hash([
     [
