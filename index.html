@@ -34,9 +34,11 @@
 
   elem_is_include = selector => pair(e => e.target.matches(`${selector} *`)),
 
-  use_this_elem = fn => e => fn(e.target),
+  prevent = fn => e => { e.preventDefault(); fn(e) },
 
-  use_parent_elem = (selector, fn) => e => fn(e.target.closest(selector)),
+  use_this_elem = fn => prevent(e => fn(e.target)),
+
+  use_parent_elem = (selector, fn) => prevent(e => fn(e.target.closest(selector))),
 
   on = (event, selector, fn) => document.addEventListener(event,
     case_of(
@@ -44,8 +46,6 @@
       elem_is_include(selector)(use_parent_elem(selector, fn))), true),
 
   on_click = (selector, fn) => on('click', selector, fn),
-
-  prevent = fn => e => { e.preventDefault(); fn(e) },
 
   render_page = page => json => document.body.innerHTML = page_body(saved_user(), page(json), page.name),
 
@@ -152,9 +152,9 @@
     ],
   ])
 
-  on_click('.tag-pill', prevent(tag => render_home(['tag', tag.innerText])))
+  on_click('.tag-pill', tag => render_home(['tag', tag.innerText]))
 
-  on_click('.page-link', prevent(link => render_home(['offset', link.dataset.offset])))
+  on_click('.page-link', link => render_home(['offset', link.dataset.offset]))
 
   on_click('#register-button', () => fetch_and_do(
     register_user($form_to_json('form')),
