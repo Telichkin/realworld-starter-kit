@@ -24,7 +24,7 @@
 
   $all = selector => document.querySelectorAll(selector),
 
-  $form_to_json = selector => Array.from($all(`${selector} [name]`)).reduce((json, i) => add(json, i.name, i.value), {}),
+  $form_to_json = selector => Array.from($all(`${selector} [name]`)).reduce((json, i) => add(json, i.name, i.value || null), {}),
 
   on_hash_changed = fn => window.addEventListener('hashchange', fn, false),
 
@@ -82,6 +82,8 @@
   refresh_page = () => dispatch_hash(hash()),
 
   authenticate_user = user => { save_user(user); redirect_to_home() },
+
+  update_user = user => { save_user(user); redirect_to_user() },
 
   logout = () => { remove_user(); redirect_to_home() },
 
@@ -166,11 +168,23 @@
       resp_is_success(authenticate_user),
       resp_is_error(render_page_with_context(page_login, { user: $form_to_json('form') })))))
 
+  on_click('#edit-user-button', () => fetch_and_do(
+      edit_user($form_to_json('form')),
+      case_of(
+        resp_is_success(update_user),
+        resp_is_error(render_page_with_context(page_settings, { user: $form_to_json('form') })))))
+
   on_click('#publish-article', () => fetch_and_do(
     create_article($form_to_json('form')),
     case_of(
       resp_is_success(redirect_to_article),
       resp_is_error(render_page_with_context(page_editor, { article: $form_to_json('form') })))))
+
+  on_click('#edit-article', button => fetch_and_do(
+      edit_article(button.dataset.slug, $form_to_json('form')),
+      case_of(
+        resp_is_success(redirect_to_article),
+        resp_is_error(render_page_with_context(page_editor, { article: $form_to_json('form') })))))
 
   on_click('#logout-button', logout)
 

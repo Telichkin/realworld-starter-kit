@@ -22,6 +22,8 @@ post = (uri, json) => request(uri, fetch_config('POST', json)),
 
 del = uri => request(uri, fetch_config('DELETE')),
 
+put = (uri, json) => request(uri, fetch_config('PUT', json)),
+
 pair_to_str = ([key, value]) => (key && value) ? `?${key}=${value}` : '',
 
 in_parallel = requests => Promise.all(requests),
@@ -44,7 +46,11 @@ register_user = user_json => post('/users', { user: user_json }),
 
 login_user = user_json => post('/users/login', { user: user_json }),
 
+edit_user = user_json => put('/user', { user: user_json }),
+
 create_article = article_json => post('/articles', { article: article_json }),
+
+edit_article = (slug, article_json) => put('/articles/' + slug, { article: article_json }),
 
 favorite_article = slug => post(`/articles/${slug}/favorite`),
 

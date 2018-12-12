@@ -1,6 +1,6 @@
 const
 
-page_editor = ({ article: { title = '', description = '', body = '', tagList = [] } = {}, errors = [] } = {}) => `
+page_editor = ({ article: { slug = '', title = '', description = '', body = '', tagList = [] } = {}, errors = [] } = {}) => `
   <div class="editor-page">
     <div class="container page">
       <div class="row">
@@ -20,7 +20,7 @@ page_editor = ({ article: { title = '', description = '', body = '', tagList = [
               <fieldset class="form-group">
                   <input name="tagList" value="${tag_list_to_str(tagList)}" type="text" class="form-control" placeholder="Enter tags"><div class="tag-list"></div>
               </fieldset>
-              <button type="button" id="publish-article" class="btn btn-lg pull-xs-right btn-primary">
+              <button type="button" data-slug="${slug}" id="${slug ? 'edit-article' : 'publish-article'}" class="btn btn-lg pull-xs-right btn-primary">
                   Publish Article
               </button>
             </fieldset>

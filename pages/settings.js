@@ -1,4 +1,4 @@
-const 
+const
 
 page_settings = ({ user: { username, email, bio, image } }) => `
   <div class="settings-page">
@@ -25,7 +25,7 @@ page_settings = ({ user: { username, email, bio, image } }) => `
                 <fieldset class="form-group">
                   <input class="form-control form-control-lg" type="password" placeholder="Password">
                 </fieldset>
-                <button class="btn btn-lg btn-primary pull-xs-right">
+                <button type="button" id="edit-user-button" class="btn btn-lg btn-primary pull-xs-right">
                   Update Settings
                 </button>
             </fieldset>
