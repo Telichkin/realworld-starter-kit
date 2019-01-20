@@ -58,6 +58,12 @@ unfavorite_article = slug => del(`/articles/${slug}/favorite`),
 
 delete_article = slug => del(`/articles/${slug}`),
 
+add_comment = (slug, comment_json) => post(`/articles/${slug}/comments`, { comment: comment_json }),
+
+follow_user = username => post(`/profiles/${username}/follow`),
+
+unfollow_user = username => del(`/profiles/${username}/follow`),
+
 get_home_page = filter_pair => merge_reponses([
   get_articles_list(filter_pair),
   get_tags_list()]),
