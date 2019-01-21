@@ -11,7 +11,8 @@ and = (...pair_creators) =>
   pair((...args) => pair_creators.every(c => c()[0](...args))),
 // ~~~ Render ~~~
 render_many = (arr, fn) => arr.map(fn).join('\n'),
-render_page = page => json => document.body.innerHTML = page_body(saved_user(), page(json), page.name),
+render_page = (page, ...url_args) => json =>
+  document.body.innerHTML = page_body(saved_user(), page(json, ...url_args), page.name),
 render_page_with_context = (page, context) => json => render_page(page)(merge([json, context])),
 date_to_str = date => new Date(date).toLocaleDateString('en-US', {
   weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
@@ -72,7 +73,8 @@ put = (uri, json) => request(uri, fetch_config('PUT', json)),
 pair_to_str = ([key, value]) => (key && value) ? `?${key}=${value}` : '',
 in_parallel = requests => Promise.all(requests),
 merge_reponses = requests => in_parallel(requests).then(merge),
-get_articles_list = (filter_pair = []) => get('/articles' + pair_to_str(filter_pair)),
+get_articles_list = (pair_str = '') => get('/articles' + pair_str),
+get_feed_articles_list = (pair_str = '') => get('/articles/feed' + pair_str),
 get_tags_list = () => get('/tags'),
 get_article = slug => get('/articles/' + slug),
 get_comments_for_article = slug => get(`/articles/${slug}/comments`),
@@ -89,18 +91,24 @@ delete_article = slug => del(`/articles/${slug}`),
 add_comment = (slug, comment_json) => post(`/articles/${slug}/comments`, { comment: comment_json }),
 follow_user = username => post(`/profiles/${username}/follow`),
 unfollow_user = username => del(`/profiles/${username}/follow`),
-get_home_page = filter_pair => merge_reponses([
-  get_articles_list(filter_pair),
+get_global_feed_page = pair_str => merge_reponses([
+  get_articles_list(pair_str),
+  get_tags_list()]),
+get_personal_feed_page = pair_str => merge_reponses([
+  get_feed_articles_list(pair_str),
+  get_tags_list()]),
+get_tag_feed_page = (tag_name, pair_str = '?') => merge_reponses([
+  get_articles_list(pair_str + '&tag=' + tag_name),
   get_tags_list()]),
 get_article_page = slug => merge_reponses([
   get_article(slug),
   get_comments_for_article(slug)]),
 get_profile_page = username => merge_reponses([
   get_profile(username),
-  get_articles_list(['author', username])]),
+  get_articles_list('?author=' + username)]),
 get_profile_favorites = username => merge_reponses([
   get_profile(username),
-  get_articles_list(['favorited', username])])
+  get_articles_list('?favorited=' + username)])
 const
 page_article_template = is_author => ({ article, comments }) => `
   <div class="article-page">
@@ -296,46 +304,75 @@ page_editor = ({ article: { slug = '', title = '', description = '', body = '', 
 `,
 tag_list_to_str = tag_list => tag_list.join ? tag_list.join(' ') : tag_list
 const
-page_home = ({ articles, tags, articlesCount }) => `
-  <div class="home-page">
-    <div class="banner">
-      <div class="container">
-        <h1 class="logo-font">conduit</h1>
-        <p>A place to share your knowledge.</p>
-      </div>
+page_home_template = tabs => ({ articles, tags, articlesCount }, ...url_args) => `
+<div class="home-page">
+  <div class="banner">
+    <div class="container">
+      <h1 class="logo-font">conduit</h1>
+      <p>A place to share your knowledge.</p>
     </div>
-    <div class="container page">
-      <div class="row">
-        <div class="col-md-9">
-          <div class="feed-toggle">
-            <ul class="nav nav-pills outline-active">
-              <li class="nav-item">
-                <a class="nav-link disabled" href="">Your Feed</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link active" href="">Global Feed</a>
-              </li>
-            </ul>
-          </div>
-          ${render_many(articles, article_preview) || empty_articles()}
-          <nav>
-            <ul class="pagination">
-              ${render_many_times(number_of_pages(articlesCount), pagination_link)}
-            </ul>
-          </nav>
+  </div>
+  <div class="container page">
+    <div class="row">
+      <div class="col-md-9">
+        <div class="feed-toggle">
+          <ul class="nav nav-pills outline-active">
+            ${tabs(url_args[0])}
+          </ul>
         </div>
-        <div class="col-md-3">
-          <div class="sidebar">
-            <p>Popular Tags</p>
-            <div class="tag-list">
-              ${render_many(tags, popular_tag)}
-            </div>
+        ${render_many(articles, article_preview) || empty_articles()}
+        <nav>
+          <ul class="pagination">
+            ${number_of_pages(articlesCount) > 1 
+              ? render_many_times(
+                  number_of_pages(articlesCount), 
+                  pagination_link(url_param_str_2_offset(url_args[1] || url_args[0])))
+              : ''}
+          </ul>
+        </nav>
+      </div>
+      <div class="col-md-3">
+        <div class="sidebar">
+          <p>Popular Tags</p>
+          <div class="tag-list">
+            ${render_many(tags, popular_tag)}
           </div>
         </div>
       </div>
     </div>
   </div>
-  `,
+</div>
+`,
+home_tabs_global_feed = () => `
+  <li class="nav-item">
+    <a class="nav-link" href="/#/personal-feed">Your Feed</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link active" href="/#/global-feed">Global Feed</a>
+  </li>
+`,
+home_tabs_personal_feed = () => `
+  <li class="nav-item">
+    <a class="nav-link active" href="/#/personal-feed">Your Feed</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="/#/global-feed">Global Feed</a>
+  </li>
+`,
+home_tabs_tag_feed = tag_name => `
+  <li class="nav-item">
+    <a class="nav-link" href="/#/personal-feed">Your Feed</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="/#/global-feed">Global Feed</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link active" href="/#/tags/${tag_name}"># ${tag_name}</a>
+  </li>
+`,
+page_global_feed = page_home_template(home_tabs_global_feed),
+page_personal_feed = page_home_template(home_tabs_personal_feed),
+page_tag_feed = page_home_template(home_tabs_tag_feed),
 article_preview = ({ title, slug, description, favoritesCount, favorited, updatedAt, author: { image, username }}) => `
   <div class="article-preview">
     <div class="article-meta">
@@ -355,9 +392,9 @@ article_preview = ({ title, slug, description, favoritesCount, favorited, update
     </a>
   </div>
 `,
-popular_tag = name => `<a href="#" class="tag-pill tag-default">${name}</a>`,
-pagination_link = number => `
-  <li class="page-item">
+popular_tag = name => `<a href="#/tags/${name}" class="tag-pill tag-default">${name}</a>`,
+pagination_link = active_offset => number => `
+  <li class="page-item ${active_offset === page_offset(number) ? 'active' : ''}">
     <a class="page-link" data-offset="${page_offset(number)}" href="#">
       ${number}
     </a>
@@ -366,13 +403,14 @@ pagination_link = number => `
 render_many_times = (number, fn) => render_many(Array(number).fill(0).map((_, i) => i + 1), fn),
 number_of_pages = total_articles_number => Math.ceil(total_articles_number / 20),
 page_offset = number => (number - 1) * 20,
+url_param_str_2_offset = (str = '') => Number((str.match('offset=([0-9]+)') || [null, 0])[1]),
 favorite_small_button = ({ slug, favoritesCount }) => `
   <button data-slug="${slug}" class="btn btn-outline-primary btn-sm pull-xs-right favorite-button">
     <i class="ion-heart"></i> ${favoritesCount}
   </button>
 `,
 unfavorite_small_button = ({ slug, favoritesCount }) => `
-<button data-slug="${slug}" class="btn btn-primary btn-sm pull-xs-right unfavorite-button">
+  <button data-slug="${slug}" class="btn btn-primary btn-sm pull-xs-right unfavorite-button">
     <i class="ion-heart"></i> ${favoritesCount}
   </button>
 `
@@ -382,7 +420,7 @@ page_not_found = () => `
   <p>Page not found</p>
 `
 const 
-profile_template = ({ profile: { username, bio, image }, articles }, favorites_selected) => `
+profile_template = favorites_selected => ({ profile: { username, bio, image, following }, articles }) => `
   <div class="profile-page">
     <div class="user-info">
       <div class="container">
@@ -393,11 +431,7 @@ profile_template = ({ profile: { username, bio, image }, articles }, favorites_s
             <p>
               ${bio || ''}
             </p>
-            <button class="btn btn-sm btn-outline-secondary action-btn">
-              <i class="ion-plus-round"></i>
-              &nbsp;
-              Follow ${username} 
-            </button>
+            ${following ? unfollow_button({ username }) : follow_button({ username })}
           </div>
         </div>
       </div>
@@ -421,8 +455,8 @@ profile_template = ({ profile: { username, bio, image }, articles }, favorites_s
     </div>
   </div>
 `
-page_profile = json => profile_template(json, false),
-page_profile_favorites = json => profile_template(json, true)
+page_profile = profile_template(false),
+page_profile_favorites = profile_template(true)
 const
 page_register = ({ user: { username = '', email = '' } = {}, errors = [] } = {}) => `
   <div class="auth-page">
@@ -519,14 +553,16 @@ const
 hash = () => window.location.hash,
 on_hash_changed = fn => { window.addEventListener('hashchange', fn, false); fn() },
 first_route_matched_hash = routes => routes.filter(([regex]) => regex.test(hash()))[0],
-use_route = ([regex, fn]) => fn(regex.exec(hash())[1]),
+use_route = ([regex, fn]) => { const res = regex.exec(hash()); fn(res[1], res[2]) },
 create_dispatch_hash = routes => () => use_route(first_route_matched_hash(routes)),
-r = str => new RegExp(`^${str}/?$`),
+r = str => new RegExp(`^${str}\/?([^/]+)?/?$`),
+set_url_param = (name, value) => window.location.hash = hash().split('?')[0] + `?${name}=${value}`,
 fetch_and_do = (fetch_res, fn) => fetch_res.then(fn),
-fetch_and_render = (fetch_fn, page_fn) => (...args) => fetch_and_do(fetch_fn(...args), render_page(page_fn)),
-render_home = fetch_and_render(get_home_page, page_home),
+fetch_and_render = (fetch_fn, page_fn) => (...args) => fetch_and_do(fetch_fn(...args), render_page(page_fn, ...args)),
 redirect_to_hash = hash_str => location.hash = hash_str,
 redirect_to_home = () => redirect_to_hash('/'),
+redirect_to_global_feed = () => redirect_to_hash('/global-feed'),
+redirect_to_personal_feed = () => redirect_to_hash('/personal-feed'),
 redirect_to_article = ({ article: { slug } }) => redirect_to_hash('/article/' + slug),
 redirect_to_login = () => redirect_to_hash('/login'),
 redirect_to_user = () => redirect_to_hash('/' + saved_username()),
@@ -536,6 +572,14 @@ resp_is_success = pair(json => !json.errors && !json.error),
 resp_is_error = pair(json => !!json.errors || !!json.error)
 const dispatch_hash = create_dispatch_hash([
   [
+    r('#/global-feed'),
+    fetch_and_render(get_global_feed_page, page_global_feed)
+  ], [
+    r('#/personal-feed'),
+    case_of(
+      user_is_anon(redirect_to_login),
+      user_is_auth(fetch_and_render(get_personal_feed_page, page_personal_feed)))
+  ], [
     r('#/login'),
     case_of(
       user_is_anon(render_page(page_login)),
@@ -567,6 +611,9 @@ const dispatch_hash = create_dispatch_hash([
       resp_is_success(page_article),
       resp_is_error(page_not_found)))
   ], [
+    r('#/tags/([^/\?]+)'),
+    fetch_and_render(get_tag_feed_page, page_tag_feed)
+  ], [
     r('#/([^/]+)/favorites'),
     fetch_and_render(get_profile_favorites, case_of(
       resp_is_success(page_profile_favorites),
@@ -578,14 +625,15 @@ const dispatch_hash = create_dispatch_hash([
       resp_is_error(page_not_found)))
   ], [
     r('$|^#'),
-    render_home
+    case_of(
+      user_is_anon(redirect_to_global_feed),
+      user_is_auth(redirect_to_personal_feed))
   ], [
     r('.+'),
     render_page(page_not_found)
   ],
 ])
-on_click('.tag-pill', tag => render_home(['tag', tag.innerText]))
-on_click('.page-link', link => render_home(['offset', link.dataset.offset]))
+on_click('.page-link', link => set_url_param('offset', link.dataset.offset)),
 on_click('#register-button', () => fetch_and_do(
   register_user($form_to_json('form')),
   case_of(
@@ -631,7 +679,9 @@ on_click('#add-comment', button => fetch_and_do(
   refresh_page))
 on_click('#follow-user', button => fetch_and_do(
   follow_user(button.dataset.username),
-  refresh_page))
+  case_of(
+    resp_is_success(refresh_page),
+    resp_is_error(redirect_to_login))))
 on_click('#unfollow-user', button => fetch_and_do(
   unfollow_user(button.dataset.username),
   refresh_page))

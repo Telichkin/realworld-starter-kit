@@ -21,7 +21,8 @@ and = (...pair_creators) =>
 // ~~~ Render ~~~
 render_many = (arr, fn) => arr.map(fn).join('\n'),
 
-render_page = page => json => document.body.innerHTML = page_body(saved_user(), page(json), page.name),
+render_page = (page, ...url_args) => json =>
+  document.body.innerHTML = page_body(saved_user(), page(json, ...url_args), page.name),
 
 render_page_with_context = (page, context) => json => render_page(page)(merge([json, context])),
 

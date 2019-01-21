@@ -1,6 +1,6 @@
 const 
 
-profile_template = ({ profile: { username, bio, image }, articles }, favorites_selected) => `
+profile_template = favorites_selected => ({ profile: { username, bio, image, following }, articles }) => `
   <div class="profile-page">
 
     <div class="user-info">
@@ -13,11 +13,7 @@ profile_template = ({ profile: { username, bio, image }, articles }, favorites_s
             <p>
               ${bio || ''}
             </p>
-            <button class="btn btn-sm btn-outline-secondary action-btn">
-              <i class="ion-plus-round"></i>
-              &nbsp;
-              Follow ${username} 
-            </button>
+            ${following ? unfollow_button({ username }) : follow_button({ username })}
           </div>
 
         </div>
@@ -49,6 +45,6 @@ profile_template = ({ profile: { username, bio, image }, articles }, favorites_s
   </div>
 `
 
-page_profile = json => profile_template(json, false),
+page_profile = profile_template(false),
 
-page_profile_favorites = json => profile_template(json, true)
+page_profile_favorites = profile_template(true)

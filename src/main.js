@@ -1,5 +1,13 @@
 const dispatch_hash = create_dispatch_hash([
   [
+    r('#/global-feed'),
+    fetch_and_render(get_global_feed_page, page_global_feed)
+  ], [
+    r('#/personal-feed'),
+    case_of(
+      user_is_anon(redirect_to_login),
+      user_is_auth(fetch_and_render(get_personal_feed_page, page_personal_feed)))
+  ], [
     r('#/login'),
     case_of(
       user_is_anon(render_page(page_login)),
@@ -31,6 +39,9 @@ const dispatch_hash = create_dispatch_hash([
       resp_is_success(page_article),
       resp_is_error(page_not_found)))
   ], [
+    r('#/tags/([^/\?]+)'),
+    fetch_and_render(get_tag_feed_page, page_tag_feed)
+  ], [
     r('#/([^/]+)/favorites'),
     fetch_and_render(get_profile_favorites, case_of(
       resp_is_success(page_profile_favorites),
@@ -42,16 +53,16 @@ const dispatch_hash = create_dispatch_hash([
       resp_is_error(page_not_found)))
   ], [
     r('$|^#'),
-    render_home
+    case_of(
+      user_is_anon(redirect_to_global_feed),
+      user_is_auth(redirect_to_personal_feed))
   ], [
     r('.+'),
     render_page(page_not_found)
   ],
 ])
 
-on_click('.tag-pill', tag => render_home(['tag', tag.innerText]))
-
-on_click('.page-link', link => render_home(['offset', link.dataset.offset]))
+on_click('.page-link', link => set_url_param('offset', link.dataset.offset)),
 
 on_click('#register-button', () => fetch_and_do(
   register_user($form_to_json('form')),
@@ -109,7 +120,9 @@ on_click('#add-comment', button => fetch_and_do(
 
 on_click('#follow-user', button => fetch_and_do(
   follow_user(button.dataset.username),
-  refresh_page))
+  case_of(
+    resp_is_success(refresh_page),
+    resp_is_error(redirect_to_login))))
 
 on_click('#unfollow-user', button => fetch_and_do(
   unfollow_user(button.dataset.username),

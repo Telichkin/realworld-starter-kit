@@ -30,7 +30,9 @@ in_parallel = requests => Promise.all(requests),
 
 merge_reponses = requests => in_parallel(requests).then(merge),
 
-get_articles_list = (filter_pair = []) => get('/articles' + pair_to_str(filter_pair)),
+get_articles_list = (pair_str = '') => get('/articles' + pair_str),
+
+get_feed_articles_list = (pair_str = '') => get('/articles/feed' + pair_str),
 
 get_tags_list = () => get('/tags'),
 
@@ -64,8 +66,16 @@ follow_user = username => post(`/profiles/${username}/follow`),
 
 unfollow_user = username => del(`/profiles/${username}/follow`),
 
-get_home_page = filter_pair => merge_reponses([
-  get_articles_list(filter_pair),
+get_global_feed_page = pair_str => merge_reponses([
+  get_articles_list(pair_str),
+  get_tags_list()]),
+
+get_personal_feed_page = pair_str => merge_reponses([
+  get_feed_articles_list(pair_str),
+  get_tags_list()]),
+
+get_tag_feed_page = (tag_name, pair_str = '?') => merge_reponses([
+  get_articles_list(pair_str + '&tag=' + tag_name),
   get_tags_list()]),
 
 get_article_page = slug => merge_reponses([
@@ -74,8 +84,8 @@ get_article_page = slug => merge_reponses([
 
 get_profile_page = username => merge_reponses([
   get_profile(username),
-  get_articles_list(['author', username])]),
+  get_articles_list('?author=' + username)]),
 
 get_profile_favorites = username => merge_reponses([
   get_profile(username),
-  get_articles_list(['favorited', username])])
+  get_articles_list('?favorited=' + username)])
